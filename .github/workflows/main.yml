@@ -62,7 +62,7 @@ jobs:
         run: kubectl get svc -o wide
 
       - name: sleep
-        run: sleep 2m
+        run: sleep 1m
 
       - name: Show ingress
         run: kubectl get ingress -o wide
@@ -71,7 +71,7 @@ jobs:
         run: kubectl describe ingress neodash-test
 
       - name: Test service URL
-        run: curl http://localhost:5005
+        run: curl http://localhost/
 
       - name: Delete Helm release
         run: helm uninstall my-release --namespace my-namespace
