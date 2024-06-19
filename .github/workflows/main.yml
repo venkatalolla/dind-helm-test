@@ -31,6 +31,9 @@ jobs:
       - name: Ingress Wait
         run: kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=120s
 
+      - name: Get ingress details
+        run: kubectl get all -n ingress-nginx
+
       - name: Install Helm chart
         run: |
           helm upgrade --install neodash-test ./neodash --wait --atomic --install \
@@ -42,17 +45,20 @@ jobs:
           --set "ingress.hosts[0].paths[0].path=/" \
           --set "ingress.hosts[0].paths[0].pathType=Prefix"
 
+      - name: Show ingress
+        run: kubectl get ingress -o wide
+
       - name: Test Helm chart installation
-        run: kubectl get pods
+        run: kubectl get pods -o wide
 
       - name: kubectl get all
-        run: kubectl get all
+        run: kubectl get all -o wide
 
       - name: events
         run: kubectl get events --sort-by='.lastTimestamp'
 
       - name: Check service
-        run: kubectl get svc
+        run: kubectl get svc -o wide
 
       - name: Test service URL
         run: curl http://localhost:5005
