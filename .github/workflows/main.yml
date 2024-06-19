@@ -31,6 +31,12 @@ jobs:
       - name: Install Helm chart
         run: helm install neodash-test ./neodash --set enable_reader_mode=false
 
+      - name: Test Helm chart installation
+        run: kubectl get pods
+
+      - name: Check service
+        run: kubectl get svc
+
       - name: Test service URL
         run: |
           SERVICE_IP=$(kubectl get svc neodash-test --template "{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}")
