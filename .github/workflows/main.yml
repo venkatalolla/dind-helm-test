@@ -29,11 +29,14 @@ jobs:
         run: kubectl wait --for=condition=Ready nodes --all --timeout=120s
 
       - name: Install Helm chart
-        run: helm upgrade neodash-test ./neodash --set enable_reader_mode=false --wait --atomic --install
+        run: helm upgrade --install neodash-test ./neodash --set enable_reader_mode=false #--wait --atomic --install
 
       - name: Test Helm chart installation
         run: kubectl get pods
-
+      - name: kubectl get all
+        run: kubectl get all
+      - name: events
+        run: kubectl get events --sort-by='.lastTimestamp'
       - name: Check service
         run: kubectl get svc
 
