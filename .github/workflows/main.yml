@@ -39,6 +39,7 @@ jobs:
           helm upgrade --install neodash-test ./neodash --wait --atomic --install \
           --set enable_reader_mode=false \
           --set service.type=ClusterIP \
+          --set service.port=80 \
           --set ingress.enabled=true \
           --set ingress.className=nginx \
           --set "ingress.hosts[0].host=localhost" \
@@ -59,6 +60,17 @@ jobs:
 
       - name: Check service
         run: kubectl get svc -o wide
+
+      - name: sleep
+        run: sleep 2m
+
+      - name: Show ingress
+        run: kubectl get ingress -o wide
+
+      - name: Get logs of ingress controller pod
+        run: |
+          INGRESS_POD=$(kubectl get pods -n kube-system -l app.kubernetes.io/name=ingress-nginx -o jsonpath='{.items[0].metadata.name}')
+          kubectl logs $INGRESS_POD -n kube-system
 
       - name: Test service URL
         run: curl http://localhost:5005
