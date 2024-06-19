@@ -29,7 +29,7 @@ jobs:
         run: kubectl wait --for=condition=Ready nodes --all --timeout=120s
 
       - name: Install Helm chart
-        run: helm install neodash-test ./neodash --set enable_reader_mode=false
+        run: helm upgrade neodash-test ./neodash --set enable_reader_mode=false --wait --atomic --install
 
       - name: Test Helm chart installation
         run: kubectl get pods
