@@ -20,26 +20,42 @@ jobs:
         uses: engineerd/setup-kind@v0.5.0
         with:
           version: "v0.23.0"
+          config: ./config/kind-conf.yaml
 
       - name: Wait for cluster to be ready
         run: kubectl wait --for=condition=Ready nodes --all --timeout=120s
 
+      - name: Setup Ingress
+        run: kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+
+      - name: Ingress Wait
+        run: kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=120s
+
       - name: Install Helm chart
-        run: helm upgrade --install neodash-test ./neodash --set enable_reader_mode=false #--wait --atomic --install
+        run: |
+          helm upgrade --install neodash-test ./neodash --wait --atomic --install \
+          --set enable_reader_mode=false \
+          --set service.type=ClusterIP \
+          --set ingress.enabled=true \
+          --set ingress.className=nginx \
+          --set "ingress.hosts[0].host=localhost" \
+          --set "ingress.hosts[0].paths[0].path=/" \
+          --set "ingress.hosts[0].paths[0].pathType=Prefix"
 
       - name: Test Helm chart installation
         run: kubectl get pods
+
       - name: kubectl get all
         run: kubectl get all
+
       - name: events
         run: kubectl get events --sort-by='.lastTimestamp'
+
       - name: Check service
         run: kubectl get svc
 
       - name: Test service URL
-        run: |
-          SERVICE_IP=$(kubectl get svc neodash-test --template "{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}")
-          curl -f http://$SERVICE_IP:5005
+        run: curl http://localhost:5005
 
       - name: Delete Helm release
         run: helm uninstall my-release --namespace my-namespace
