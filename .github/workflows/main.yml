@@ -33,7 +33,7 @@ jobs:
 
       - name: Test service URL
         run: |
-          SERVICE_IP=$(kubectl get svc neodash-test -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          SERVICE_IP=$(kubectl get svc neodash-test --template "{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}")
           curl -f http://$SERVICE_IP:5005
 
       - name: Delete Helm release
