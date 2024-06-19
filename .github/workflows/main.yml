@@ -11,50 +11,37 @@ on:
 jobs:
   test-helm-chart:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v1
+      - name: Set up KinD
+        uses: engineerd/setup-kind@v0.5.0
+        with:
+          version: "v0.11.1"
 
-      - name: Run Kind and Helm in Docker
+      - name: Install Helm
         run: |
-          # Start Docker daemon
-          sudo service docker start
+          curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
 
-          # Pull Docker image with Kind, kubectl, and Helm
-          docker pull kindest/node:v1.21.1
+      - name: Wait for cluster to be ready
+        run: kubectl wait --for=condition=Ready nodes --all --timeout=120s
 
-          # Run commands inside the Docker container
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(pwd):/workspace -w /workspace kindest/node:v1.21.1 /bin/sh -c "
-            # Install Kind
-            curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.14.0/kind-linux-amd64 && chmod +x ./kind && mv ./kind /usr/local/bin/kind
-            
-            # Install kubectl
-            curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl
-            
-            # Install Helm
-            curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
-            
-            # Create Kind cluster
-            kind create cluster --name test-cluster
-            
-            # Wait for the cluster to be ready
-            kubectl wait --for=condition=Ready nodes --all --timeout=120s
-            
-            # Add Helm stable repo and update
-            helm repo add stable https://charts.helm.sh/stable && helm repo update
-            
-            # Install Helm chart
-            helm install my-release stable/my-chart --namespace my-namespace --create-namespace
-            
-            # Test Helm chart installation
-            kubectl get pods --namespace my-namespace
-            
-            # Delete Helm release
-            helm uninstall my-release --namespace my-namespace
-            
-            # Delete Kind cluster
-            kind delete cluster --name test-cluster
-          "
+      - name: Add Helm stable repo
+        run: helm repo add stable https://charts.helm.sh/stable
+
+      - name: Update Helm repos
+        run: helm repo update
+
+      - name: Install Helm chart
+        run: helm install my-release stable/my-chart --namespace my-namespace --create-namespace
+
+      - name: Test Helm chart installation
+        run: kubectl get pods --namespace my-namespace
+
+      - name: Delete Helm release
+        run: helm uninstall my-release --namespace my-namespace
+
+      - name: Delete Kind cluster
+        run: kind delete cluster --name test-cluster
