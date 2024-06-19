@@ -67,10 +67,8 @@ jobs:
       - name: Show ingress
         run: kubectl get ingress -o wide
 
-      - name: Get logs of ingress controller pod
-        run: |
-          INGRESS_POD=$(kubectl get pods -n kube-system -l app.kubernetes.io/name=ingress-nginx -o jsonpath='{.items[0].metadata.name}')
-          kubectl logs $INGRESS_POD -n kube-system
+      - name: describe
+        run: kubectl describe ingress neodash-test
 
       - name: Test service URL
         run: curl http://localhost:5005
